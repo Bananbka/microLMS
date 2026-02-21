@@ -2,10 +2,14 @@ from django.contrib import admin
 from django.urls import path, include
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
+from core.views import HealthCheckAPIView
+
 urlpatterns = [
-    path('courses/', include('apps.courses.controllers.urls')),
-    path('users/', include('apps.users.controllers.urls')),
-    path('payroll/', include('apps.payroll.controllers.urls')),
+    path('v1/courses/', include('apps.courses.controllers.urls')),
+    path('v1/users/', include('apps.users.controllers.urls')),
+    path('v1/payroll/', include('apps.payroll.controllers.urls')),
+
+    path('health/', HealthCheckAPIView.as_view(), name='health-check'),
 
     path('admin/', admin.site.urls),
 

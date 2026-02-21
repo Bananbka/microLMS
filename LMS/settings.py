@@ -139,6 +139,7 @@ REST_FRAMEWORK = {
     'DATETIME_INPUT_FORMATS': [
         'iso-8601',
     ],
+    'EXCEPTION_HANDLER': 'core.exceptions.custom_exception_handler',
 }
 
 SIMPLE_JWT = {
