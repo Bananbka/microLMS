@@ -1,4 +1,5 @@
-﻿from rest_framework_simplejwt.authentication import JWTAuthentication
+﻿from drf_spectacular.extensions import OpenApiAuthenticationExtension
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 from django.utils import translation
 
@@ -27,3 +28,16 @@ class CookieJWTAuthentication(JWTAuthentication):
         user = StatelessUser(validated_token)
 
         return user, validated_token
+
+
+class CookieJWTAuthenticationScheme(OpenApiAuthenticationExtension):
+    target_class = CookieJWTAuthentication
+    name = 'cookieAuth'
+
+    def get_security_definition(self, auto_schema):
+        return {
+            'type': 'apiKey',
+            'in': 'cookie',
+            'name': 'access-token',
+            'description': 'JWT Token in HttpOnly cookie (access-token)'
+        }
