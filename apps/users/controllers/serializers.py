@@ -2,12 +2,14 @@ from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from apps.users.domain.entities import UserEntity
+from apps.users.infrastructure.repository import UserRepository
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user: UserEntity):
-        token = super().get_token(user)
+        rep = UserRepository() # костиль
+        token = super().get_token(rep._from_entity(user))
 
         token['role'] = user.role
         token['full_name'] = user.full_name

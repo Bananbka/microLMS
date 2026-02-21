@@ -1,7 +1,12 @@
 ﻿from django.urls import path
-
-from apps.courses.controllers.views import CourseAPIView
+from .views import CourseListCreateAPIView, CourseDetailAPIView, LessonListCreateAPIView, LessonDetailAPIView, \
+    LessonListAPIView
 
 urlpatterns = [
-    path('courses/', CourseAPIView.as_view(), name='courses'),
+    path('', CourseListCreateAPIView.as_view(), name='course-list-create'),
+    path('<int:course_id>/', CourseDetailAPIView.as_view(), name='course-detail'),
+
+    path('lessons/', LessonListAPIView.as_view(), name='lesson-list'),
+    path('<int:course_id>/lessons/', LessonListCreateAPIView.as_view(), name='lesson-list-create'),
+    path('lessons/<int:lesson_id>/', LessonDetailAPIView.as_view(), name='lesson-detail'),
 ]
