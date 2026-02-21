@@ -3,20 +3,22 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 
+from apps.users.infrastructure.repository import UserRepository
+
 
 class AuthService:
+    def __init__(self, user_repo=None):
+        self.user_repo = user_repo or UserRepository()
 
-    @staticmethod
-    def authenticate_user(email, password):
+    def authenticate_user(self, email, password):
         user = authenticate(email=email, password=password)
 
         if not user:
             raise AuthenticationFailed("Invalid credentials")
-
         if not user.is_active:
             raise AuthenticationFailed("User is blocked")
 
-        return user
+        return self.user_repo._to_entity(user)
 
     @staticmethod
     def refresh_tokens(refresh_token: str) -> tuple[str, str]:

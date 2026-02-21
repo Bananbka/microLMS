@@ -2,13 +2,10 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from drf_spectacular.utils import extend_schema
-from rest_framework_simplejwt.exceptions import TokenError
-from rest_framework_simplejwt.tokens import RefreshToken
 
-from LMS import settings
 from core.permissions import HasPermission
 from .serializers import RegistrationDTO, UserResponseDTO, CustomTokenObtainPairSerializer, LoginDTO, RoleResponseDTO, \
-    RoleCreateUpdateDTO, AssignRoleDTO, UserUpdateDTO
+    RoleCreateUpdateDTO, AssignRoleDTO, UserUpdateDTO, RoleUpdateDTO
 from .utils import set_auth_cookies
 from ..services.auth_service import AuthService
 from ..services.role_service import RoleService
@@ -102,6 +99,7 @@ class RefreshAPIView(APIView):
         return resp
 
 
+### ROLES
 class RoleListCreateAPIView(APIView):
     permission_classes = [HasPermission]
     required_permissions = ['roles.manage']
@@ -131,6 +129,44 @@ class RoleListCreateAPIView(APIView):
         return Response(output_dto.data, status=201)
 
 
+class RoleDetailAPIView(APIView):
+    permission_classes = [HasPermission]
+    required_permissions = ['roles.manage']
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.role_service = RoleService()
+
+    @extend_schema(tags=['Users/Roles'], responses=RoleResponseDTO)
+    def get(self, request, slug):
+        role_entity = self.role_service.get_role(slug)
+        output_dto = RoleResponseDTO(role_entity)
+        return Response(output_dto.data)
+
+    @extend_schema(tags=['Users/Roles'], request=RoleUpdateDTO, responses=RoleResponseDTO)
+    def patch(self, request, slug):
+        input_dto = RoleUpdateDTO(data=request.data)
+        input_dto.is_valid(raise_exception=True)
+
+        data = input_dto.validated_data
+        permission_slugs = data.pop('permission_slugs', None)
+
+        updated_role_entity = self.role_service.update_role(
+            slug=slug,
+            update_data=data,
+            permission_slugs=permission_slugs
+        )
+
+        output_dto = RoleResponseDTO(updated_role_entity)
+        return Response(output_dto.data)
+
+    @extend_schema(tags=['Users/Roles'], responses={204: None})
+    def delete(self, request, slug):
+        self.role_service.delete_role(slug)
+        return Response(status=204)
+
+
+### USERS
 class UserListAPIView(APIView):
     permission_classes = [HasPermission]
 

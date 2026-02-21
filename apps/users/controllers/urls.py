@@ -1,7 +1,7 @@
 from django.urls import path, include
 
 from apps.users.controllers.views import RegistrationAPIView, LoginAPIView, LogoutAPIView, RefreshAPIView, \
-    RoleListCreateAPIView, UserListAPIView, UserAssignRoleAPIView, UserDetailAPIView
+    RoleListCreateAPIView, UserListAPIView, UserAssignRoleAPIView, UserDetailAPIView, RoleDetailAPIView
 
 auth_urls = [
     path('register/', RegistrationAPIView.as_view(), name='register'),
@@ -18,7 +18,7 @@ users_urls = [
 
 roles_urls = [
     path('', RoleListCreateAPIView.as_view(), name='role-list-create'),
-
+    path('<str:slug>/', RoleDetailAPIView.as_view(), name='role-detail'),
 ]
 
 urlpatterns = [

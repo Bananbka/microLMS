@@ -1,21 +1,18 @@
-from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+from apps.users.domain.entities import UserEntity
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
-    def get_token(cls, user):
+    def get_token(cls, user: UserEntity):
         token = super().get_token(user)
 
-        token['role'] = user.role.slug if user.role else None
+        token['role'] = user.role
         token['full_name'] = user.full_name
         token['email'] = user.email
-
-        if user.role:
-            token['permissions'] = list(user.role.permissions.values_list('slug', flat=True))
-        else:
-            token['permissions'] = []
+        token['permissions'] = user.permissions
 
         return token
 
@@ -48,6 +45,14 @@ class RoleResponseDTO(serializers.Serializer):
     slug = serializers.CharField(read_only=True)
     permissions = serializers.ListField(
         child=serializers.CharField(), read_only=True
+    )
+
+
+class RoleUpdateDTO(serializers.Serializer):
+    name = serializers.CharField(max_length=255, required=False)
+    slug = serializers.SlugField(max_length=255, required=False)
+    permission_slugs = serializers.ListField(
+        child=serializers.CharField(), required=False, write_only=True
     )
 
 

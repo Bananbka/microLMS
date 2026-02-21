@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List, Optional
 
 
@@ -17,3 +17,4 @@ class UserEntity:
     full_name: str
     phone: str
     role: Optional[str]
+    permissions: List[str] = field(default_factory=list)

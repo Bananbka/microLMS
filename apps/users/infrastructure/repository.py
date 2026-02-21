@@ -1,4 +1,5 @@
 from django.db import IntegrityError
+from django.db.models import ProtectedError
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ValidationError
 
@@ -44,15 +45,47 @@ class RoleRepository:
     def is_role_exists(self, slug: str) -> bool:
         return Role.objects.filter(slug=slug).exists()
 
+    def update_role(self, slug: str, update_data: dict, permission_slugs: list = None) -> RoleEntity:
+        role = get_object_or_404(Role, slug=slug)
+
+        for key, value in update_data.items():
+            setattr(role, key, value)
+
+        try:
+            role.save()
+        except IntegrityError:
+            raise ValidationError({"slug": ["Role with this slug already exists."]})
+
+        if permission_slugs is not None:
+            perms = Permission.objects.filter(slug__in=permission_slugs)
+            role.permissions.set(perms)
+
+        updated_role = Role.objects.prefetch_related('permissions').get(id=role.id)
+        return self._to_entity(updated_role)
+
+    def delete_role(self, slug: str) -> None:
+        role = get_object_or_404(Role, slug=slug)
+        try:
+            role.delete()
+        except ProtectedError:
+            raise ValidationError({
+                "detail": "Cannot delete this role because of jews."
+            })
+
 
 class UserRepository:
     def _to_entity(self, user: User) -> UserEntity:
+        permissions = []
+        if getattr(user, 'role', None):
+            permissions = [p.slug for p in user.role.permissions.all()]
+
         return UserEntity(
             id=user.id,
             email=user.email,
             full_name=user.full_name,
             phone=user.phone,
-            role=user.role.slug if getattr(user, 'role', None) else None
+            role=user.role.slug if getattr(user, 'role', None) else None,
+            permissions=permissions
         )
 
     def _from_entity(self, user: UserEntity) -> User:
@@ -78,23 +111,31 @@ class UserRepository:
             raise
 
     def get_all_users(self):
-        users = User.objects.select_related('role').all()
+        users = User.objects.select_related('role').prefetch_related('role__permissions').all()
         return [self._to_entity(u) for u in users]
 
     def update_user_role(self, user_ent: UserEntity, role_ent: RoleEntity) -> UserEntity:
         user = self._from_entity(user_ent)
         user.role_id = role_ent.id
         user.save(update_fields=['role_id'])
+
         user_ent.role = role_ent.slug
+        user_ent.permissions = role_ent.permissions
         return user_ent
 
     def get_user_by_id(self, user_id: int) -> UserEntity:
-        user = get_object_or_404(User.objects.select_related('role'), id=user_id)
+        user = get_object_or_404(
+            User.objects.select_related('role').prefetch_related('role__permissions'),
+            id=user_id
+        )
         return self._to_entity(user)
 
     def update_user(self, user_id: int, update_data: dict) -> UserEntity:
         try:
-            user = get_object_or_404(User, id=user_id)
+            user = get_object_or_404(
+                User.objects.select_related('role').prefetch_related('role__permissions'),
+                id=user_id
+            )
 
             for key, value in update_data.items():
                 setattr(user, key, value)
