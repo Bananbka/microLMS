@@ -61,9 +61,8 @@ class CourseDetailAPIView(APIView):
 
     @extend_schema(tags=["Courses/Courses"], responses=CourseResponseDTO)
     def get(self, request, course_id):
-        course = self.course_service.get_course(course_id)
-        output_dto = CourseResponseDTO(course)
-        return Response(output_dto.data)
+        course_data = self.course_service.get_course(course_id, cookies=request.COOKIES)
+        return Response(course_data, status=200)
 
     @extend_schema(tags=["Courses/Courses"], request=CourseCreateUpdateDTO, responses=CourseResponseDTO)
     def patch(self, request, course_id):

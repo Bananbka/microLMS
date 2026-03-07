@@ -1,4 +1,8 @@
-﻿from ..infrastructure.repositories import CourseRepository, LessonRepository
+﻿import pybreaker
+import requests
+
+from ..infrastructure.http_clients import fetch_author_data
+from ..infrastructure.repositories import CourseRepository, LessonRepository
 
 
 class CourseService:
@@ -8,8 +12,30 @@ class CourseService:
     def get_all_courses(self):
         return self.course_repo.get_all()
 
-    def get_course(self, course_id: int):
-        return self.course_repo.get_by_id(course_id)
+    def get_course(self, course_id: int, cookies: dict = None):
+        course = self.course_repo.get_by_id(course_id)
+
+        author_data = None
+        if course.author_id:
+            try:
+                user_response = fetch_author_data(course.author_id, cookies=cookies)
+                author_data = {
+                    "id": user_response.get("id"),
+                    "first_name": user_response.get("first_name"),
+                    "last_name": user_response.get("last_name"),
+                    "email": user_response.get("email")
+                }
+            except pybreaker.CircuitBreakerError:
+                author_data = {"id": course.author_id, "first_name": "Service currently", "last_name": "unavailable"}
+            except requests.exceptions.RequestException:
+                author_data = {"id": course.author_id, "first_name": "Unknown", "last_name": "Author"}
+
+        return {
+            "id": course.id,
+            "title": course.title,
+            "description": course.description,
+            "author": author_data
+        }
 
     def create_course(self, data: dict, author_id: int):
         return self.course_repo.create(
