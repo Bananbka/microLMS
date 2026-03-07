@@ -7,7 +7,8 @@ class UserService:
         self.role_repo = role_repo or RoleRepository()
 
     def register_user(self, email, password, full_name, phone):
-        student_role = self.role_repo.get_default_student_role()
+        student_role_ent = self.role_repo.get_default_student_role()
+        student_role = self.role_repo._from_entity(student_role_ent)
 
         user = self.user_repo.create_user(
             email=email,

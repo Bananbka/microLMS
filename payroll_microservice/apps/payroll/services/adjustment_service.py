@@ -1,13 +1,13 @@
-﻿from django.http import Http404
+﻿import pybreaker
 from rest_framework.exceptions import ValidationError
 
 from apps.payroll.infrastructure.repository import PayoutAdjustmentRepository
+from apps.payroll.infrastructure.http_clients import check_user_exists
 
 
 class PayoutAdjustmentService:
-    def __init__(self, adjustment_repo=None, user_service=None):
+    def __init__(self, adjustment_repo=None):
         self.adjustment_repo = adjustment_repo or PayoutAdjustmentRepository()
-        self.user_service = user_service or UserService()
 
     def get_all_adjustments(self):
         return self.adjustment_repo.get_all()
@@ -17,9 +17,9 @@ class PayoutAdjustmentService:
 
     def create_adjustment(self, data: dict):
         try:
-            self.user_service.get_user(data['user'])
-        except Http404:
-            raise ValidationError({"user": ["There is no user with such id."]})
+            check_user_exists(data['user'])
+        except pybreaker.CircuitBreakerError:
+            raise ValidationError({"detail": "User service is down (Circuit Open)."})
 
         return self.adjustment_repo.create(
             user=data['user'],

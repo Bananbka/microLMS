@@ -1,13 +1,13 @@
-﻿from rest_framework.exceptions import ValidationError
-from django.http import Http404
+﻿import pybreaker
+from rest_framework.exceptions import ValidationError
 
 from apps.payroll.infrastructure.repository import PayoutRepository
+from apps.payroll.infrastructure.http_clients import check_user_exists
 
 
 class PayoutService:
-    def __init__(self, payout_repo=None, user_service=None):
+    def __init__(self, payout_repo=None):
         self.payout_repo = payout_repo or PayoutRepository()
-        self.user_service = user_service or UserService()
 
     def get_all_payouts(self):
         return self.payout_repo.get_all()
@@ -15,11 +15,11 @@ class PayoutService:
     def get_payout(self, payout_id: int):
         return self.payout_repo.get_by_id(payout_id)
 
-    def create_payout(self, data: dict):
+    def create_payout(self, data: dict, cookies: dict = None):
         try:
-            self.user_service.get_user(data['user'])
-        except Http404:
-            raise ValidationError({"user": ["There is no user with such id."]})
+            check_user_exists(data['user'], cookies=cookies)
+        except pybreaker.CircuitBreakerError:
+            raise ValidationError({"detail": "User service is down (Circuit Open)."})
 
         return self.payout_repo.create(
             user=data['user'],

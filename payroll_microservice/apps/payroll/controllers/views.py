@@ -31,7 +31,10 @@ class PayoutListCreateAPIView(APIView):
         input_dto = PayoutCreateUpdateDTO(data=request.data)
         input_dto.is_valid(raise_exception=True)
 
-        payout = self.payout_service.create_payout(input_dto.validated_data)
+        payout = self.payout_service.create_payout(
+            input_dto.validated_data,
+            cookies=request.COOKIES
+        )
         output_dto = PayoutResponseDTO(payout)
         return Response(output_dto.data, status=201)
 
