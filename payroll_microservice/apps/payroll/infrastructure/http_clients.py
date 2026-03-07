@@ -4,6 +4,8 @@ from urllib3.util.retry import Retry
 import pybreaker
 from rest_framework.exceptions import ValidationError
 
+from core.middlewares import get_current_correlation_id
+
 user_service_cb = pybreaker.CircuitBreaker(fail_max=3, reset_timeout=30)
 
 
@@ -19,8 +21,12 @@ def check_user_exists(user_id: int, cookies: dict = None):
     session = get_session()
     url = f"http://users-service:8001/v1/users/users/{user_id}/"
 
+    headers = {
+        'X-Correlation-ID': get_current_correlation_id()
+    }
+
     try:
-        response = session.get(url, timeout=(2.0, 5.0), cookies=cookies)
+        response = session.get(url, timeout=(2.0, 5.0), cookies=cookies, headers=headers)
 
         if response.status_code == 404:
             raise ValidationError({"user": ["User with such id does not exist."]})
