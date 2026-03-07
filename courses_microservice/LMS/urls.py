@@ -6,8 +6,6 @@ from core.views import HealthCheckAPIView
 
 urlpatterns = [
     path('v1/courses/', include('apps.courses.controllers.urls')),
-    path('v1/users/', include('apps.users.controllers.urls')),
-    path('v1/payroll/', include('apps.payroll.controllers.urls')),
 
     path('health/', HealthCheckAPIView.as_view(), name='health-check'),
 

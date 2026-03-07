@@ -2,7 +2,6 @@
 from django.http import Http404
 
 from apps.payroll.infrastructure.repository import PayoutRepository
-from apps.users.services.user_service import UserService
 
 
 class PayoutService:

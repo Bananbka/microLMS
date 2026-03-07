@@ -18,7 +18,7 @@ SECRET_KEY = 'django-insecure-6f64z@hed24w)f6=*r8d)0)jf$$v@i0*k1z#t2!*q7llfc_-s)
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -34,9 +34,7 @@ INSTALLED_APPS = [
     'django_filters',
     'rest_framework_simplejwt.token_blacklist',
 
-    'apps.courses',
     'apps.users',
-    'apps.payroll'
 ]
 
 MIDDLEWARE = [

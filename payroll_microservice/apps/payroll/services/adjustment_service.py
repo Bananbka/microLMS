@@ -2,7 +2,6 @@
 from rest_framework.exceptions import ValidationError
 
 from apps.payroll.infrastructure.repository import PayoutAdjustmentRepository
-from apps.users.services.user_service import UserService
 
 
 class PayoutAdjustmentService:
