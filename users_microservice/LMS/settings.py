@@ -185,3 +185,15 @@ LOGGING = {
         'level': 'INFO',
     },
 }
+
+### RABBITMQ CONFIG
+MQ_USER = os.getenv('MQ_USER')
+MQ_PASSWORD = os.getenv('MQ_PASSWORD')
+MQ_PORT = os.getenv('MQ_PORT')
+
+### CELERY CONFIG
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', f'amqp://{MQ_USER}:{MQ_PASSWORD}@rabbitmq:{MQ_PORT}//')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
