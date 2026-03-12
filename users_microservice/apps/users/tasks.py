@@ -1,0 +1,45 @@
+﻿from celery import shared_task
+import pika
+import json
+from django.conf import settings
+from apps.users.infrastructure.models import OutboxEvent
+
+
+@shared_task
+def publish_outbox_events():
+    events = OutboxEvent.objects.filter(status='PENDING')
+
+    if not events.exists():
+        return "No pending events"
+
+    connection = pika.BlockingConnection(pika.URLParameters(settings.CELERY_BROKER_URL))
+    channel = connection.channel()
+
+    channel.exchange_declare(exchange='microLMS_events', exchange_type='fanout')
+
+    processed_count = 0
+    for event in events:
+        try:
+            message = {
+                "event_id": event.id,
+                "event_type": event.event_type,
+                "payload": event.payload,
+                "timestamp": event.created_at.isoformat()
+            }
+
+            channel.basic_publish(
+                exchange='microLMS_events',
+                routing_key='',
+                body=json.dumps(message)
+            )
+
+            event.status = 'PROCESSED'
+            event.save(update_fields=['status'])
+            processed_count += 1
+
+        except Exception as e:
+            event.status = 'FAILED'
+            event.save(update_fields=['status'])
+
+    connection.close()
+    return f"Processed {processed_count} events"

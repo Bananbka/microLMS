@@ -36,7 +36,7 @@
   users-celery-worker:
     build:
       context: ./users_microservice
-    command: sh -c "celery -A LMS worker -l info"
+    command: sh -c "celery -A LMS worker -B -l info"
     environment:
       - DB_HOST=${DB_HOST}
       - DB_PORT=${DB_PORT}
@@ -66,6 +66,23 @@
       db:
         condition: service_healthy
 
+  courses-celery-worker:
+    build:
+      context: ./courses_microservice
+    command: sh -c "celery -A LMS worker -l info"
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${COURSES_DB_NAME}
+      - DB_USER=${POSTGRES_USER}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
+      - CELERY_BROKER_URL=amqp://${MQ_USER}:${MQ_PASSWORD}@rabbitmq:5672//
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
   payroll-service:
     build:
       context: ./payroll_microservice
@@ -80,6 +97,23 @@
       - DB_PASSWORD=${POSTGRES_PASSWORD}
     depends_on:
       db:
+        condition: service_healthy
+
+  payroll-celery-worker:
+    build:
+      context: ./payroll_microservice
+    command: sh -c "celery -A LMS worker -l info"
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${PAYROLL_DB_NAME}
+      - DB_USER=${POSTGRES_USER}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
+      - CELERY_BROKER_URL=amqp://${MQ_USER}:${MQ_PASSWORD}@rabbitmq:5672//
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
 
   rabbitmq:

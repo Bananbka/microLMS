@@ -8,10 +8,3 @@ app = Celery('LMS')
 app.config_from_object('django.conf:settings', namespace='CELERY')
 
 app.autodiscover_tasks()
-
-app.conf.beat_schedule = {
-    'relay-outbox-events-every-5-seconds': {
-        'task': 'apps.users.tasks.publish_outbox_events',
-        'schedule': 5.0,
-    },
-}

@@ -1,10 +1,10 @@
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.db.models import ProtectedError
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ValidationError
 
 from apps.users.domain.entities import RoleEntity, UserEntity
-from apps.users.infrastructure.models import Role, User, Permission
+from apps.users.infrastructure.models import Role, User, Permission, OutboxEvent
 
 
 class RoleRepository:
@@ -100,6 +100,36 @@ class UserRepository:
                 phone=phone,
                 role=role
             )
+            return self._to_entity(user)
+
+        except IntegrityError as e:
+            error_msg = str(e).lower()
+            if 'phone' in error_msg:
+                raise ValidationError({"phone": ["User with this phone already exists."]})
+            if 'email' in error_msg:
+                raise ValidationError({"email": ["This email is already in use."]})
+            raise
+
+    def create_user(self, email, password, full_name, phone, role) -> UserEntity:
+        try:
+            with transaction.atomic():
+                user = User.objects.create_user(
+                    email=email,
+                    password=password,
+                    full_name=full_name,
+                    phone=phone,
+                    role=role
+                )
+                event_payload = {
+                    "user_id": user.id,
+                    "email": user.email,
+                    "full_name": user.full_name,
+                    "role": role.slug if role else None
+                }
+                OutboxEvent.objects.create(
+                    event_type="UserCreated",
+                    payload=event_payload
+                )
             return self._to_entity(user)
 
         except IntegrityError as e:
