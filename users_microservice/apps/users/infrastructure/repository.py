@@ -93,25 +93,6 @@ class UserRepository:
 
     def create_user(self, email, password, full_name, phone, role) -> UserEntity:
         try:
-            user = User.objects.create_user(
-                email=email,
-                password=password,
-                full_name=full_name,
-                phone=phone,
-                role=role
-            )
-            return self._to_entity(user)
-
-        except IntegrityError as e:
-            error_msg = str(e).lower()
-            if 'phone' in error_msg:
-                raise ValidationError({"phone": ["User with this phone already exists."]})
-            if 'email' in error_msg:
-                raise ValidationError({"email": ["This email is already in use."]})
-            raise
-
-    def create_user(self, email, password, full_name, phone, role) -> UserEntity:
-        try:
             with transaction.atomic():
                 user = User.objects.create_user(
                     email=email,

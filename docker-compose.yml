@@ -116,6 +116,23 @@
       rabbitmq:
         condition: service_healthy
 
+  payroll-consumer:
+    build:
+      context: ./payroll_microservice
+    command: sh -c "python manage.py consume_events"
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${PAYROLL_DB_NAME}
+      - DB_USER=${POSTGRES_USER}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
+      - CELERY_BROKER_URL=amqp://${MQ_USER}:${MQ_PASSWORD}@rabbitmq:5672//
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
   rabbitmq:
     image: rabbitmq:3-management-alpine
     environment:

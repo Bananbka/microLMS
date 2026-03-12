@@ -12,7 +12,9 @@ def publish_outbox_events():
     if not events.exists():
         return "No pending events"
 
-    connection = pika.BlockingConnection(pika.URLParameters(settings.CELERY_BROKER_URL))
+    broker_url = settings.CELERY_BROKER_URL.rstrip('/') + '/%2F'
+
+    connection = pika.BlockingConnection(pika.URLParameters(broker_url))
     channel = connection.channel()
 
     channel.exchange_declare(exchange='microLMS_events', exchange_type='fanout')
