@@ -35,7 +35,7 @@ class Command(BaseCommand):
                 self.stdout.write(f"Payroll: transferring money to author {payload['author_id']}")
 
                 PayoutAdjustment.objects.create(
-                    user_id=payload['author_id'],
+                    user=payload['author_id'],
                     name=f"Sale of course {payload['course_id']}",
                     amount=payload['price'],
                     category=AdjustmentCategory.BONUS,
