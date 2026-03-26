@@ -101,6 +101,24 @@
       rabbitmq:
         condition: service_healthy
 
+  courses-consumer:
+    build:
+      context: ./courses_microservice
+    command: sh -c "python manage.py consume_events"
+    restart: on-failure
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${COURSES_DB_NAME}
+      - DB_USER=${POSTGRES_USER}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
+      - CELERY_BROKER_URL=amqp://${MQ_USER}:${MQ_PASSWORD}@rabbitmq:5672//
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
   payroll-service:
     build:
       context: ./payroll_microservice
