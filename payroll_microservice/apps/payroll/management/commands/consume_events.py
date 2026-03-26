@@ -3,7 +3,7 @@ import pika
 from django.core.management.base import BaseCommand
 from django.conf import settings
 
-from apps.payroll.infrastructure.models import Payout
+from apps.payroll.infrastructure.models import Payout, PayoutAdjustment, AdjustmentCategory, OutboxEvent
 
 
 class Command(BaseCommand):
@@ -15,24 +15,42 @@ class Command(BaseCommand):
 
         channel.exchange_declare(
             exchange='microLMS_events',
-            exchange_type='fanout',
+            exchange_type='topic',
             durable=True
         )
 
         result = channel.queue_declare(queue='payroll_events_queue', durable=True)
         queue_name = result.method.queue
 
-        channel.queue_bind(exchange='microLMS_events', queue=queue_name)
+        channel.queue_bind(exchange='microLMS_events', queue=queue_name, routing_key='user.purchase.validated')
 
         def callback(ch, method, properties, body):
             event = json.loads(body)
+            routing_key = method.routing_key
+
             self.stdout.write(self.style.SUCCESS(f"Got the EVENT: {event['event_type']}"))
 
-            if event['event_type'] == 'UserCreated':
+            if routing_key == 'user.purchase.validated':
                 payload = event['payload']
-                self.stdout.write(f"Payroll: creating payroll for new user {payload['email']}")
-                Payout.objects.create(user=payload['user_id'], amount=0)
-                self.stdout.write(f"Payroll: payroll was created {payload['email']}")
+                self.stdout.write(f"Payroll: transferring money to author {payload['author_id']}")
+
+                PayoutAdjustment.objects.create(
+                    user_id=payload['author_id'],
+                    name=f"Sale of course {payload['course_id']}",
+                    amount=payload['price'],
+                    category=AdjustmentCategory.BONUS,
+                )
+
+                OutboxEvent.objects.create(
+                    event_type='PayrollTransferSuccess',
+                    routing_key='payroll.transfer.success',
+                    payload={
+                        "purchase_id": payload['purchase_id'],
+                        "status": "SUCCESS"
+                    }
+                )
+
+                self.stdout.write(f"Payroll: transfer completed for purchase {payload['purchase_id']}")
 
             ch.basic_ack(delivery_tag=method.delivery_tag)
 

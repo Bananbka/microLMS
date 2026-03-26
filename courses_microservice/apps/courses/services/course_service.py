@@ -1,13 +1,16 @@
 ﻿import pybreaker
 import requests
 
+from ..domain.entities import CoursePurchaseEntity
 from ..infrastructure.http_clients import fetch_author_data
-from ..infrastructure.repositories import CourseRepository, LessonRepository
+from ..infrastructure.models import OutboxEvent
+from ..infrastructure.repositories import CourseRepository, LessonRepository, CoursePurchaseRepository
 
 
 class CourseService:
     def __init__(self, course_repo=None):
         self.course_repo = course_repo or CourseRepository()
+        self.course_pur_repo = CoursePurchaseRepository()
 
     def get_all_courses(self):
         return self.course_repo.get_all()
@@ -34,7 +37,8 @@ class CourseService:
             "id": course.id,
             "title": course.title,
             "description": course.description,
-            "author": author_data
+            "author": author_data,
+            "price": course.price
         }
 
     def create_course(self, data: dict, author_id: int):
@@ -49,6 +53,28 @@ class CourseService:
 
     def delete_course(self, course_id: int):
         self.course_repo.delete(course_id)
+
+    def purchase_course(self, course_id: int, user_id: int):
+        course = self.get_course(course_id)
+
+        purchase = self.course_pur_repo.create(
+            user_id=user_id,
+            course_id=course['id'],
+            price_at_moment=course['price']
+        )
+
+        OutboxEvent.objects.create(
+            event_type='CoursePurchaseInitiated',
+            routing_key='course.purchase.initiated',
+            payload={
+                "purchase_id": purchase.id,
+                "user_id": user_id,
+                "course_id": course['id'],
+                "author_id": course['author']['id'],
+                "price": str(course['price'])
+            }
+        )
+        return purchase
 
 
 class LessonService:

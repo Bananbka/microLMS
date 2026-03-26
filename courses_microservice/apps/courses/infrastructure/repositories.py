@@ -1,6 +1,8 @@
 ﻿from django.shortcuts import get_object_or_404
-from ..domain.entities import CourseEntity, LessonEntity
-from .models import Course, Lesson
+
+from .models.couese_purchase import PurchaseStatus
+from ..domain.entities import CourseEntity, LessonEntity, CoursePurchaseEntity
+from .models import Course, Lesson, CoursePurchase
 
 
 class CourseRepository:
@@ -98,3 +100,30 @@ class LessonRepository:
     def delete(self, lesson_id: int) -> None:
         lesson = get_object_or_404(Lesson, id=lesson_id)
         lesson.delete()
+
+
+class CoursePurchaseRepository:
+    def _to_entity(self, course_purchase: CoursePurchase) -> CoursePurchaseEntity:
+        return CoursePurchaseEntity(
+            id=course_purchase.id,
+            user_id=course_purchase.user_id,
+            course=course_purchase.course.id,
+            price_at_moment=course_purchase.price_at_moment,
+            status=course_purchase.status,
+            error_message=course_purchase.error_message,
+            created_at=course_purchase.created_at,
+            updated_at=course_purchase.updated_at
+        )
+
+    def create(self, **kwargs) -> CoursePurchaseEntity:
+        kwargs['status'] = 'PENDING'
+        course_purchase = CoursePurchase.objects.create(**kwargs)
+        return self._to_entity(course_purchase)
+
+    def get_by_id(self, id_: int) -> CoursePurchaseEntity:
+        course_purchase = get_object_or_404(CoursePurchase, id=id_)
+        return self._to_entity(course_purchase)
+
+    def get_all(self) -> list[CoursePurchaseEntity]:
+        course_purchases = CoursePurchase.objects.all()
+        return [self._to_entity(cp) for cp in course_purchases]

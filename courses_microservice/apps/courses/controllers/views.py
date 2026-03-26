@@ -1,4 +1,5 @@
-﻿from rest_framework.views import APIView
+﻿from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema
 from core.permissions import HasPermission
@@ -35,7 +36,6 @@ class CourseListCreateAPIView(APIView):
         input_dto = CourseCreateUpdateDTO(data=request.data)
         input_dto.is_valid(raise_exception=True)
 
-        # Передаємо request.user.id як автора!
         course = self.course_service.create_course(
             data=input_dto.validated_data,
             author_id=request.user.id
@@ -155,3 +155,19 @@ class LessonDetailAPIView(APIView):
     def delete(self, request, lesson_id):
         self.lesson_service.delete_lesson(lesson_id)
         return Response(status=204)
+
+
+class CourseBuyAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.course_service = CourseService()
+
+    @extend_schema(tags=["Courses/Courses"], responses={200: "ok"})
+    def post(self, request, course_id):
+        user_id = request.user.id
+
+        self.course_service.purchase_course(course_id, user_id)
+
+        return Response({"detail": "Purchase initiated. Processing payment..."}, status=202)

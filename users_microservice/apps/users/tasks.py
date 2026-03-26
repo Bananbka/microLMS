@@ -17,7 +17,11 @@ def publish_outbox_events():
     connection = pika.BlockingConnection(pika.URLParameters(broker_url))
     channel = connection.channel()
 
-    channel.exchange_declare(exchange='microLMS_events', exchange_type='fanout')
+    channel.exchange_declare(
+        exchange='microLMS_events',
+        exchange_type='topic',
+        durable=True
+    )
 
     processed_count = 0
     for event in events:
@@ -31,8 +35,11 @@ def publish_outbox_events():
 
             channel.basic_publish(
                 exchange='microLMS_events',
-                routing_key='',
-                body=json.dumps(message)
+                routing_key=event.routing_key,
+                body=json.dumps(message),
+                properties=pika.BasicProperties(
+                    delivery_mode=2
+                )
             )
 
             event.status = 'PROCESSED'

@@ -26,3 +26,15 @@ class CourseEntity:
     updated_at: datetime
     lessons: List[LessonEntity] = field(default_factory=list)
     price: Decimal = Decimal(0)
+
+
+@dataclass
+class CoursePurchaseEntity:
+    id: int
+    user_id: int
+    course: int
+    price_at_moment: Decimal
+    status: str
+    error_message: str
+    created_at: datetime
+    updated_at: datetime
