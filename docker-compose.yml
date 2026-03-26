@@ -36,7 +36,7 @@
   users-celery-worker:
     build:
       context: ./users_microservice
-    command: sh -c "celery -A LMS worker -B -l info"
+    command: sh -c "celery -A LMS worker -B -Q users_queue -l info"
     environment:
       - DB_HOST=${DB_HOST}
       - DB_PORT=${DB_PORT}
@@ -48,6 +48,24 @@
       rabbitmq:
         condition: service_healthy
       db:
+        condition: service_healthy
+
+  users-consumer:
+    build:
+      context: ./users_microservice
+    command: sh -c "python manage.py consume_events"
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${USERS_DB_NAME}
+      - DB_USER=${POSTGRES_USER}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
+      - CELERY_BROKER_URL=amqp://${MQ_USER}:${MQ_PASSWORD}@rabbitmq:5672//
+    restart: on-failure
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
 
   courses-service:
@@ -69,7 +87,7 @@
   courses-celery-worker:
     build:
       context: ./courses_microservice
-    command: sh -c "celery -A LMS worker -l info"
+    command: sh -c "celery -A LMS worker -B -Q courses_queue -l info"
     environment:
       - DB_HOST=${DB_HOST}
       - DB_PORT=${DB_PORT}
@@ -102,7 +120,7 @@
   payroll-celery-worker:
     build:
       context: ./payroll_microservice
-    command: sh -c "celery -A LMS worker -l info"
+    command: sh -c "celery -A LMS worker -B -Q payroll_queue -l info"
     environment:
       - DB_HOST=${DB_HOST}
       - DB_PORT=${DB_PORT}
@@ -127,6 +145,7 @@
       - DB_USER=${POSTGRES_USER}
       - DB_PASSWORD=${POSTGRES_PASSWORD}
       - CELERY_BROKER_URL=amqp://${MQ_USER}:${MQ_PASSWORD}@rabbitmq:5672//
+    restart: on-failure
     depends_on:
       db:
         condition: service_healthy
