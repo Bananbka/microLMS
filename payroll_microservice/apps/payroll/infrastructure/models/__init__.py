@@ -2,3 +2,4 @@
 from .payout import PayoutStatus
 from .payout_adjustment import PayoutAdjustment
 from .payout_adjustment import AdjustmentCategory
+from .outbox import OutboxEvent

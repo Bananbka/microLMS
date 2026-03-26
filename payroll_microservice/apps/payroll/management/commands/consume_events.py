@@ -13,7 +13,11 @@ class Command(BaseCommand):
         connection = pika.BlockingConnection(pika.URLParameters(broker_url))
         channel = connection.channel()
 
-        channel.exchange_declare(exchange='microLMS_events', exchange_type='fanout')
+        channel.exchange_declare(
+            exchange='microLMS_events',
+            exchange_type='fanout',
+            durable=True
+        )
 
         result = channel.queue_declare(queue='payroll_events_queue', durable=True)
         queue_name = result.method.queue
