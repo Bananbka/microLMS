@@ -33,9 +33,11 @@ class Command(BaseCommand):
             if routing_key == 'course.purchase.initiated':
                 payload = event['payload']
                 user_id = payload['user_id']
+                author_id = payload['author_id']
 
                 try:
                     user = User.objects.get(id=user_id)
+                    User.objects.get(id=author_id)
 
                     if not user.is_active:
                         raise ValueError("User account is inactive or blocked.")
