@@ -25,3 +25,12 @@ services:
         paths:
           - /api/payroll
         strip_path: false
+
+  - name: bff-service
+    url: http://bff-service:8004
+    routes:
+      - name: bff-route
+        paths:
+          - /api/bff
+        strip_path: false
+

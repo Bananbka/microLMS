@@ -200,6 +200,20 @@
       - users-service
       - courses-service
       - payroll-service
+      - bff-service
+
+  bff-service:
+    build:
+      context: ./bff_microservice
+    command: sh -c "uvicorn main:app --host 0.0.0.0 --port 8004 --reload"
+    volumes:
+      - ./bff_microservice:/app
+    ports:
+      - "8004:8004"
+    depends_on:
+      - users-service
+      - courses-service
+      - payroll-service
 
 volumes:
   postgres_data:

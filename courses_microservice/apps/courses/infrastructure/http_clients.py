@@ -20,7 +20,7 @@ def get_session():
 @user_service_cb
 def fetch_author_data(author_id: int, cookies: dict = None) -> dict:
     session = get_session()
-    url = f"http://users-service:8001/v1/users/users/{author_id}/"
+    url = f"http://users-service:8001/api/users/v1/users/users/{author_id}/"
     headers = {'X-Correlation-ID': get_current_correlation_id()}
 
     response = session.get(url, timeout=(2.0, 5.0), cookies=cookies, headers=headers)
