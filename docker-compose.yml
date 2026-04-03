@@ -184,5 +184,22 @@
       timeout: 5s
       retries: 10
 
+  kong:
+    image: kong:latest
+    container_name: api_gateway
+    environment:
+      - KONG_DATABASE=off
+      - KONG_DECLARATIVE_CONFIG=/kong/declarative/kong.yml
+      - KONG_PROXY_ACCESS_LOG=/dev/stdout
+      - KONG_PROXY_ERROR_LOG=/dev/stderr
+    volumes:
+      - "./kong.yml:/kong/declarative/kong.yml"
+    ports:
+      - "8080:8000"
+    depends_on:
+      - users-service
+      - courses-service
+      - payroll-service
+
 volumes:
   postgres_data:

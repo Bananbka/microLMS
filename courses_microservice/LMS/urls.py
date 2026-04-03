@@ -11,8 +11,8 @@ urlpatterns = [
 
     path('admin/', admin.site.urls),
 
-    path('doc/schema/', SpectacularAPIView.as_view(), name='schema'),
-    path('doc/schema/redoc/', SpectacularRedocView.as_view(url_name="schema", ), name='redoc'),
-    path('doc/schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name="schema"), name='swagger-ui'),
+    path('api/courses/doc/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('api/courses/doc/schema/redoc/', SpectacularRedocView.as_view(url_name="schema", ), name='redoc'),
+    path('api/courses/doc/schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name="schema"), name='swagger-ui'),
 
 ]
