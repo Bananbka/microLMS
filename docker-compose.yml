@@ -22,11 +22,13 @@
     ports:
       - "8001:8001"
     environment:
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_TOKEN=root
+      - CONSUL_HOST=consul
       - DB_HOST=${DB_HOST}
       - DB_PORT=${DB_PORT}
       - DB_NAME=${USERS_DB_NAME}
       - DB_USER=${POSTGRES_USER}
-      - DB_PASSWORD=${POSTGRES_PASSWORD}
     depends_on:
       db:
         condition: service_healthy
@@ -243,6 +245,17 @@
     ports:
       - "8500:8500"
     command: "agent -dev -client=0.0.0.0"
+
+  vault:
+    image: hashicorp/vault:latest
+    container_name: vault_server
+    user: "root"
+    ports:
+      - "8200:8200"
+    environment:
+      - VAULT_DEV_ROOT_TOKEN_ID=root
+      - VAULT_DISABLE_MLOCK=true
+    command: "server -dev -dev-listen-address=0.0.0.0:8200"
 
 
 volumes:

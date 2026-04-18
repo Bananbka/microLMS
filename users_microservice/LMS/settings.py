@@ -3,9 +3,13 @@ from datetime import timedelta
 from pathlib import Path
 
 import consul
+import requests
 
 CONSUL_HOST = os.environ.get('CONSUL_HOST', 'consul')
 c = consul.Consul(host=CONSUL_HOST, port=8500)
+
+VAULT_ADDR = os.environ.get('VAULT_ADDR', 'http://vault:8200')
+VAULT_TOKEN = os.environ.get('VAULT_TOKEN', 'root')
 
 
 def get_consul_config(key, default=None):
@@ -19,6 +23,23 @@ def get_consul_config(key, default=None):
     return default
 
 
+def get_vault_secret(secret_key, default=None):
+    try:
+        url = f"{VAULT_ADDR}/v1/secret/data/microlms"
+        headers = {"X-Vault-Token": VAULT_TOKEN}
+        response = requests.get(url, headers=headers, timeout=3)
+
+        if response.status_code == 200:
+            data = response.json()
+            return data['data']['data'].get(secret_key, default)
+        else:
+            print(f"⚠️ Vault повернув статус {response.status_code}")
+    except Exception as e:
+        print(f"⚠️ Не вдалося підключитися до Vault: {e}")
+
+    return default
+
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -26,7 +47,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-6f64z@hed24w)f6=*r8d)0)jf$$v@i0*k1z#t2!*q7llfc_-s)'
+SECRET_KEY = get_vault_secret('django_secret_key', 'fallback-insecure-key')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -85,7 +106,7 @@ WSGI_APPLICATION = 'LMS.wsgi.application'
 DB_HOST = get_consul_config('microlms/shared/db/host', 'db')
 DB_PORT = get_consul_config('microlms/shared/db/port', '5432')
 DB_USER = get_consul_config('microlms/shared/db/user', 'postgres')
-DB_PASSWORD = get_consul_config('microlms/shared/db/password', 'password')
+DB_PASSWORD = get_vault_secret('db_password')
 USERS_DB_NAME = get_consul_config('microlms/users-service/dev/db_name', 'microlms_users')
 DATABASES = {
     'default': {
