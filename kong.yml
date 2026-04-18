@@ -1,14 +1,67 @@
 ﻿_format_version: "3.0"
 _transform: true
 
+consumers:
+  - username: microlms_client
+    jwt_secrets:
+      - key: "microlms"
+        secret: "django-insecure-6f64z@hed24w)f6=*r8d)0)jf$$v@i0*k1z#t2!*q7llfc_-s)"
+        algorithm: "HS256"
+
+plugins:
+  - name: rate-limiting
+    config:
+      minute: 5
+      policy: local
+      fault_tolerant: true
+      hide_client_headers: false
+
+  - name: prometheus
+
 services:
   - name: users-service
     url: http://users-service:8001
     routes:
-      - name: users-route
+      - name: auth-public-route
+        paths:
+          - /api/users/v1/users/auth
+          - /api/users/doc/schema
+        strip_path: false
+
+      - name: users-protected-route
         paths:
           - /api/users
         strip_path: false
+        plugins: &auth_plugins
+          - name: jwt
+            config:
+              key_claim_name: iss
+              claims_to_verify:
+                - exp
+              cookie_names:
+                - access-token
+
+          - name: pre-function
+            config:
+              access:
+                - |
+                  local cookie_header = kong.request.get_header("Cookie")
+                  if cookie_header then
+                    token = cookie_header:match("access%-token=([^;]+)")
+                  end
+                  
+                  if token then
+                    local payload_64 = token:match("^[^%.]+%.([^%.]+)%.")
+                    if payload_64 then
+                      local rem = #payload_64 % 4
+                      if rem > 0 then payload_64 = payload_64 .. string.rep("=", 4 - rem) end
+                      local payload_str = ngx.decode_base64(payload_64)
+                      local cjson = require("cjson")
+                      local payload = cjson.decode(payload_str)
+                      if payload.user_id then kong.service.request.set_header("X-User-Id", tostring(payload.user_id)) end
+                      if payload.role then kong.service.request.set_header("X-User-Role", payload.role) end
+                    end
+                  end
 
   - name: courses-service
     url: http://courses-service:8002
@@ -17,6 +70,7 @@ services:
         paths:
           - /api/courses
         strip_path: false
+        plugins: *auth_plugins
 
   - name: payroll-service
     url: http://payroll-service:8003
@@ -25,6 +79,7 @@ services:
         paths:
           - /api/payroll
         strip_path: false
+        plugins: *auth_plugins
 
   - name: bff-service
     url: http://bff-service:8004
@@ -33,4 +88,4 @@ services:
         paths:
           - /api/bff
         strip_path: false
-
+        plugins: *auth_plugins

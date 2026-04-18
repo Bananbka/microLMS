@@ -151,6 +151,7 @@ SIMPLE_JWT = {
     "SIGNING_KEY": SECRET_KEY,
     "AUTH_COOKIE_HTTP_ONLY": True,
     "AUTH_HEADER_TYPES": ("Bearer",),
+    "ISSUER": "microlms"
 }
 
 SPECTACULAR_SETTINGS = {
