@@ -238,6 +238,11 @@
     depends_on:
       - prometheus
 
+  consul:
+    image: hashicorp/consul:latest
+    ports:
+      - "8500:8500"
+    command: "agent -dev -client=0.0.0.0"
 
 
 volumes:

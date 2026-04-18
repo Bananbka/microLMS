@@ -2,9 +2,22 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
-from dotenv import load_dotenv
+import consul
 
-load_dotenv()
+CONSUL_HOST = os.environ.get('CONSUL_HOST', 'consul')
+c = consul.Consul(host=CONSUL_HOST, port=8500)
+
+
+def get_consul_config(key, default=None):
+    try:
+        index, data = c.kv.get(key)
+        if data is not None and 'Value' in data:
+            return data['Value'].decode('utf-8')
+    except Exception as e:
+        print(f"{e}")
+
+    return default
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -38,6 +51,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'core.middlewares.ConsulMaintenanceMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'core.middlewares.CorrelationIdMiddleware',
@@ -68,14 +82,19 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'LMS.wsgi.application'
 
+DB_HOST = get_consul_config('microlms/shared/db/host', 'db')
+DB_PORT = get_consul_config('microlms/shared/db/port', '5432')
+DB_USER = get_consul_config('microlms/shared/db/user', 'postgres')
+DB_PASSWORD = get_consul_config('microlms/shared/db/password', 'password')
+USERS_DB_NAME = get_consul_config('microlms/users-service/dev/db_name', 'microlms_users')
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME'),
-        'USER': os.getenv('DB_USER'),
-        'PASSWORD': os.getenv('DB_PASSWORD'),
-        'HOST': os.getenv('DB_HOST'),
-        'PORT': os.getenv('DB_PORT'),
+        'NAME': USERS_DB_NAME,
+        'USER': DB_USER,
+        'PASSWORD': DB_PASSWORD,
+        'HOST': DB_HOST,
+        'PORT': DB_PORT,
     }
 }
 
